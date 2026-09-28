@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkVerse — Social, Chat, Video & AI</title>
+<style>
+:root{
+  --bg:#f0f2f5; --card:#ffffff; --primary:#1877f2; --green:#25d366;
+  --dark:#111b21; --chatbg:#e5ddd5; --yt:#ff0000; --text:#050505;
+  --muted:#65676b; --border:#dddfe2; --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",Helvetica,Arial,sans-serif}
+body{background:var(--bg);color:var(--text)}
+button{cursor:pointer;border:none;font-size:14px}
+input,textarea{font-size:14px;outline:none}
+.hidden{display:none !important}
+
+/* ===== AUTH ===== */
+#authScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1877f2,#00c6ff,#25d366);display:flex;align-items:center;justify-content:center;z-index:100}
+.auth-box{background:#fff;border-radius:16px;padding:36px;width:400px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.auth-box h1{color:var(--primary);font-size:34px;margin-bottom:4px}
+.auth-box p{color:var(--muted);margin-bottom:20px}
+.auth-box input{width:100%;padding:12px 14px;margin-bottom:12px;border:1px solid var(--border);border-radius:8px}
+.btn-primary{width:100%;padding:12px;background:var(--primary);color:#fff;border-radius:8px;font-weight:600;font-size:16px}
+.btn-green{width:100%;padding:12px;background:#42b72a;color:#fff;border-radius:8px;font-weight:600;font-size:16px;margin-top:10px}
+.auth-err{color:#e41e3f;font-size:13px;min-height:18px;margin-bottom:8px}
+
+/* ===== TOP NAV ===== */
+#app{display:none}
+.topbar{background:var(--card);height:56px;display:flex;align-items:center;padding:0 16px;gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.1);position:sticky;top:0;z-index:50}
+.logo{color:var(--primary);font-size:26px;font-weight:800;cursor:pointer}
+.search-bar{background:var(--bg);border-radius:20px;padding:8px 16px;width:260px;display:flex;gap:8px;align-items:center}
+.search-bar input{border:none;background:transparent;width:100%}
+.nav-tabs{display:flex;gap:4px;flex:1;justify-content:center}
+.nav-tab{padding:8px 28px;border-radius:8px;color:var(--muted);font-size:15px;font-weight:600;position:relative}
+.nav-tab.active{color:var(--primary);background:#e7f3ff}
+.nav-tab .badge{position:absolute;top:2px;right:12px;background:#e41e3f;color:#fff;font-size:10px;border-radius:10px;padding:1px 5px}
+.top-right{display:flex;align-items:center;gap:12px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer}
+.avatar.sm{width:32px;height:32px;font-size:13px}
+.avatar.lg{width:120px;height:120px;font-size:44px;margin:0 auto}
+.avatar.page{border-radius:8px}
+.yt-wrap{position:relative;padding-bottom:56.25%;height:0;border-radius:12px;overflow:hidden;background:#000}
+.logout-btn{background:var(--bg);padding:8px 14px;border-radius:20px;font-weight:600;color:var(--muted)}
+
+main{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+
+/* ===== FEED ===== */
+.feed-layout{display:grid;grid-template-columns:260px 1fr 280px;gap:20px}
+.side-menu{display:flex;flex-direction:column;gap:4px}
+.side-item{padding:10px 12px;border-radius:8px;font-weight:600;display:flex;gap:12px;align-items:center;cursor:pointer;color:var(--text)}
+.side-item:hover{background:#e4e6eb}
+.stories{display:flex;gap:10px;overflow-x:auto;margin-bottom:16px;padding-bottom:6px}
+.story{min-width:110px;height:190px;border-radius:12px;position:relative;cursor:pointer;flex-shrink:0;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.story img,.story .story-grad{width:100%;height:100%;object-fit:cover}
+.story-grad{display:flex;align-items:center;justify-content:center;font-size:40px}
+.story span{position:absolute;bottom:8px;left:8px;color:#fff;font-size:12px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.story .story-add{position:absolute;top:8px;left:8px;background:var(--primary);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800}
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.composer-top{display:flex;gap:10px;margin-bottom:12px}
+.composer-top textarea{flex:1;background:var(--bg);border:none;border-radius:20px;padding:12px 16px;resize:none;height:44px}
+.composer-actions{display:flex;justify-content:space-around;border-top:1px solid var(--border);padding-top:10px}
+.composer-actions button{background:transparent;font-weight:600;color:var(--muted);padding:8px 14px;border-radius:8px}
+.composer-actions button:hover{background:var(--bg)}
+.post-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.post-head .info b{display:block}
+.post-head .info small{color:var(--muted)}
+.post-text{margin:8px 0;white-space:pre-wrap}
+.post-media{border-radius:10px;overflow:hidden;margin-top:8px}
+.post-media img,.post-media video{width:100%;display:block}
+.post-stats{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;padding:10px 4px;border-bottom:1px solid var(--border)}
+.post-actions{display:flex;padding-top:8px}
+.post-actions button{flex:1;background:transparent;padding:8px;font-weight:600;color:var(--muted);border-radius:8px}
+.post-actions button:hover{background:var(--bg)}
+.post-actions button.liked{color:var(--primary)}
+.comments{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.comment{display:flex;gap:8px;font-size:13px}
+.comment .bubble{background:var(--bg);border-radius:14px;padding:6px 12px}
+.comment-input{display:flex;gap:8px;margin-top:10px}
+.comment-input input{flex:1;background:var(--bg);border:none;border-radius:16px;padding:8px 14px}
+.comment-input button{background:var(--primary);color:#fff;border-radius:16px;padding:0 16px;font-weight:600}
+.right-panel .card{padding:12px}
+.friend-row{display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;cursor:pointer}
+.friend-row:hover{background:var(--bg)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);margin-left:auto}
+
+/* ===== WATCH ===== */
+.watch-layout{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+.player-card video{width:100%;border-radius:12px;background:#000}
+.player-card h2{margin:10px 0 4px}
+.player-meta{color:var(--muted);font-size:13px}
+.chip-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.chip{padding:6px 14px;border-radius:16px;background:var(--bg);font-weight:600;font-size:13px;cursor:pointer}
+.chip.active{background:var(--text);color:#fff}
+.vid-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.vid-card{background:var(--card);border-radius:12px;overflow:hidden;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.vid-thumb{width:100%;height:120px;position:relative}
+.vid-thumb .grad{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:38px}
+.vid-thumb .dur{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,.8);color:#fff;font-size:11px;padding:2px 6px;border-radius:4px}
+.vid-info{padding:10px}
+.vid-info b{font-size:14px;display:block;margin-bottom:2px}
+.vid-info small{color:var(--muted)}
+.vid-card.playing{outline:3px solid var(--yt)}
+
+/* ===== CHAT (WhatsApp style) ===== */
+.chat-layout{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 140px);background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.chat-list{border-right:1px solid var(--border);display:flex;flex-direction:column;background:#fff}
+.chat-list-head{padding:14px 16px;background:#f0f2f5;font-weight:800;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+.chat-list-head .avatar{background:var(--green)}
+.chat-search{padding:10px}
+.chat-search input{width:100%;background:var(--bg);border:none;border-radius:20px;padding:9px 16px}
+.chat-items{overflow-y:auto;flex:1}
+.chat-item{display:flex;gap:12px;padding:12px 16px;cursor:pointer}
+.chat-item:hover,.chat-item.active{background:#f0f2f5}
+.chat-item .cinfo{flex:1;min-width:0}
+.chat-item .cinfo b{font-size:15px}
+.chat-item .cinfo p{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-item time{font-size:11px;color:var(--green);font-weight:700}
+.chat-window{display:flex;flex-direction:column;background:var(--chatbg)}
+.chat-win-head{background:#f0f2f5;padding:12px 16px;display:flex;gap:12px;align-items:center;font-weight:700}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;
+  background-image:radial-gradient(#d5cdc4 1px,transparent 1px);background-size:22px 22px}
+.msg{max-width:65%;padding:9px 13px;border-radius:12px;font-size:14px;position:relative;box-shadow:0 1px 1px rgba(0,0,0,.15)}
+.msg.in{background:#fff;align-self:flex-start;border-top-left-radius:2px}
+.msg.out{background:#d9fdd3;align-self:flex-end;border-top-right-radius:2px}
+.msg time{display:block;font-size:10px;color:#8696a0;text-align:right;margin-top:3px}
+.chat-input{display:flex;gap:8px;padding:10px;background:#f0f2f5;align-items:center}
+.chat-input input{flex:1;border:none;border-radius:24px;padding:12px 18px}
+.send-btn{background:var(--green);color:#fff;width:44px;height:44px;border-radius:50%;font-size:18px;display:flex;align-items:center;justify-content:center}
+
+/* ===== AI ASSISTANT ===== */
+.ai-fab{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#1877f2,#9b30ff);color:#fff;font-size:26px;box-shadow:0 6px 20px rgba(0,0,0,.3);z-index:90;display:flex;align-items:center;justify-content:center}
+.ai-panel{position:fixed;bottom:100px;right:24px;width:360px;max-width:92vw;height:480px;background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);z-index:90;display:flex;flex-direction:column;overflow:hidden}
+.ai-head{background:linear-gradient(135deg,#1877f2,#9b30ff);color:#fff;padding:14px 16px;font-weight:700}
+.ai-head small{display:block;font-weight:400;opacity:.85}
+.ai-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#f7f8fa}
+.ai-msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13.5px;line-height:1.45;white-space:pre-wrap}
+.ai-msg.bot{background:#fff;border:1px solid var(--border);align-self:flex-start;border-top-left-radius:2px}
+.ai-msg.user{background:var(--primary);color:#fff;align-self:flex-end;border-top-right-radius:2px}
+.typing{align-self:flex-start;background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px 16px;color:var(--muted);font-size:13px}
+.ai-input{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border)}
+.ai-input input{flex:1;border:1px solid var(--border);border-radius:20px;padding:10px 16px}
+.ai-input button{background:linear-gradient(135deg,#1877f2,#9b30ff);color:#fff;border-radius:20px;padding:0 18px;font-weight:600}
+
+/* ===== PROFILE ===== */
+.profile-top{text-align:center;padding-bottom:20px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.profile-top h2{margin:10px 0 4px}
+.profile-top p{color:var(--muted)}
+
+@media(max-width:900px){.feed-layout{grid-template-columns:1fr}.side-menu,.right-panel{display:none}
+.watch-layout{grid-template-columns:1fr}.chat-layout{grid-template-columns:1fr}.chat-list{display:none}
+.search-bar{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ================= AUTH ================= -->
+<div id="authScreen">
+  <div class="auth-box">
+    <h1>LinkVerse</h1>
+    <p>Social Feed • Messaging • Videos • AI — all in one place</p>
+    <div id="loginForm">
+      <input id="loginEmail" type="email" placeholder="Email address" autocomplete="email">
+      <input id="loginPass" type="password" placeholder="Password">
+      <div class="auth-err" id="loginErr"></div>
+      <button class="btn-primary" onclick="doLogin()">Log In</button>
+      <button class="btn-green" onclick="showSignup()">Create New Account</button>
+    </div>
+    <div id="signupForm" class="hidden">
+      <input id="suName" type="text" placeholder="Full name">
+      <input id="suEmail" type="email" placeholder="Email address">
+      <input id="suPass" type="password" placeholder="New password (min 6 chars)">
+      <input id="suPhone" type="tel" placeholder="Phone number (e.g. +1 555-0142)">
+      <div class="auth-err" id="suErr"></div>
+      <button class="btn-green" onclick="doSignup()">Sign Up</button>
+      <button class="btn-primary" style="margin-top:10px" onclick="showLogin()">Back to Log In</button>
+    
+    <div id="otpForm" class="hidden">
+      <p style="color:var(--muted);margin-bottom:12px;font-size:14px">We sent a 4-digit code to your phone. Enter it below:</p>
+      <input id="otpCode" type="text" placeholder="Enter OTP (try 1234)" maxlength="4">
+      <div class="auth-err" id="otpErr"></div>
+      <button class="btn-green" onclick="verifyOTP()">Verify & Create Account</button>
+      <button class="btn-primary" style="margin-top:10px" onclick="showSignup()">Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo" onclick="switchTab('feed')">LinkVerse</div>
+    <div class="search-bar">🔍 <input id="globalSearch" placeholder="Search LinkVerse" oninput="renderAll()"></div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tab-feed" onclick="switchTab('feed')">🏠 Home</button>
+      <button class="nav-tab" id="tab-watch" onclick="switchTab('watch')">🎬 Watch</button>
+      <button class="nav-tab" id="tab-chat" onclick="switchTab('chat')">💬 Messages <span class="badge" id="chatBadge">3</span></button>
+    </div>
+    <div class="top-right">
+      <div class="avatar" id="navAvatar" onclick="switchTab('profile')">?</div>
+      <button class="logout-btn" onclick="logout()">Log Out</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- FEED -->
+    <section id="page-feed">
+      <div class="feed-layout">
+        <div class="side-menu">
+          <div class="side-item" onclick="switchTab('profile')">👤 <span id="sideName">Profile</span></div>
+          <div class="side-item" onclick="switchTab('chat')">💬 Messages</div>
+          <div class="side-item" onclick="switchTab('watch')">🎬 Watch</div>
+          <div class="side-item" onclick="openAI()">🤖 AI Assistant</div>
+          <div class="side-item" onclick="alert('Saved items coming soon!')">🔖 Saved</div>
+          <div class="side-item" onclick="alert('Groups coming soon!')">👥 Groups</div>
+        </div>
+        <div>
+          <div class="stories" id="stories"></div>
+          <div class="card">
+            <div class="composer-top">
+              <div class="avatar sm" id="compAvatar">?</div>
+              <textarea id="postInput" placeholder="What's on your mind?" oninput="this.style.height='';this.style.height=Math.min(this.scrollHeight,140)+'px'"></textarea>
+            </div>
+            <div class="composer-actions">
+              <button onclick="attachPhoto()">📷 Photo</button>
+              <button onclick="attachVideo()">🎥 Video</button>
+              <button onclick="publishPost()" style="background:var(--primary);color:#fff">📤 Post</button>
+            </div>
+          </div>
+          <div id="feedPosts"></div>
+        </div>
+        <div class="right-panel">
+          <div class="card"><b>Contacts</b><div id="contactsList"></div></div>
+          <div class="card"><b>🔥 Trending</b><div style="margin-top:8px;font-size:14px;color:var(--muted);line-height:2">#AIRevolution<br>#SpaceLaunch2026<br>#WorldCupFinal<br>#TechNewsDaily</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WATCH -->
+    <section id="page-watch" class="hidden">
+      <div class="chip-row" id="chipRow"></div>
+      <div class="watch-layout">
+        <div class="player-card card" id="playerCard"></div>
+        <div class="vid-grid" id="vidGrid"></div>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section id="page-chat" class="hidden">
+      <div class="chat-layout">
+        <div class="chat-list">
+          <div class="chat-list-head"><span>Chats</span><div class="avatar sm" id="chatAvatar">?</div></div>
+          <div class="chat-search"><input id="chatSearch" placeholder="🔍 Search chats" oninput="renderChatList()"></div>
+          <div class="chat-items" id="chatItems"></div>
+        </div>
+        <div class="chat-window">
+          <div class="chat-win-head" id="chatWinHead"></div>
+          <div class="chat-messages" id="chatMessages"></div>
+          <div class="chat-input">
+            <input id="chatInput" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="send-btn" onclick="sendChat()">➤</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="page-profile" class="hidden">
+      <div class="card profile-top">
+        <div class="avatar lg" id="profileAvatar">?</div>
+        <h2 id="profileName"></h2>
+        <p id="profileEmail"></p>
+        <div class="post-stats" style="max-width:300px;margin:14px auto 0;border:none">
+          <span><b id="statPosts">0</b> posts</span>
+          <span><b>842</b> friends</span>
+          <span><b>1.2k</b> likes</span>
+        </div>
+      </div>
+      <div id="profilePosts"></div>
+    </section>
+  </main>
+
+  <!-- AI -->
+  <button class="ai-fab" onclick="toggleAI()">🤖</button>
+  <div class="ai-panel hidden" id="aiPanel">
+    <div class="ai-head">LinkVerse AI ✨<small>Always online • Ask me anything</small></div>
+    <div class="ai-body" id="aiBody"></div>
+    <div class="ai-input">
+      <input id="aiInput" placeholder="Ask the AI…" onkeydown="if(event.key==='Enter')sendAI()">
+      <button onclick="sendAI()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   DATA & STATE
+============================================================ */
+const SAMPLE_VIDS = [
+  {id:1,title:"Me at the zoo",ch:"jawed",views:"318M views",dur:"0:18",emoji:"🦒",vid:"jNQXAC9IVRw",cat:"History",thumb:"https://i.ytimg.com/vi/jNQXAC9IVRw/hqdefault.jpg"},
+  {id:2,title:"Gangnam Style",ch:"officialpsy",views:"5.3B views",dur:"4:12",emoji:"🕺",vid:"9bZkp7q19f0",cat:"Music",thumb:"https://i.ytimg.com/vi/9bZkp7q19f0/hqdefault.jpg"},
+  {id:3,title:"Charlie bit my finger",ch:"HDCYT",views:"887M views",dur:"0:56",emoji:"👶",vid:"0EqSXDwTq6U",cat:"Comedy",thumb:"https://i.ytimg.com/vi/0EqSXDwTq6U/hqdefault.jpg"},
+  {id:4,title:"Baby Shark Dance",ch:"Pinkfong",views:"14B views",dur:"2:16",emoji:"🦈",vid:"XqZsoesa55w",cat:"Kids",thumb:"https://i.ytimg.com/vi/XqZsoesa55w/hqdefault.jpg"},
+  {id:5,title:"$456,000 Squid Game In Real Life!",ch:"MrBeast",views:"682M views",dur:"25:42",emoji:"🦑",vid:"0e3GPea1Tyg",cat:"Entertainment",thumb:"https://i.ytimg.com/vi/0e3GPea1Tyg/hqdefault.jpg"},
+  {id:6,title:"How great leaders inspire action",ch:"TED",views:"21M views",dur:"18:35",emoji:"🎤",vid:"qp0HIF3SfI4",cat:"Education",thumb:"https://i.ytimg.com/vi/qp0HIF3SfI4/hqdefault.jpg"},
+  {id:7,title:"Despacito",ch:"LuisFonsi",views:"8.4B views",dur:"4:41",emoji:"🎵",vid:"kJQP7kiw5Fk",cat:"Music",thumb:"https://i.ytimg.com/vi/kJQP7kiw5Fk/hqdefault.jpg"},
+  {id:8,title:"Shape of You",ch:"EdSheeran",views:"6.2B views",dur:"4:23",emoji:"🎸",vid:"JGwWNGJdvx8",cat:"Music",thumb:"https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg"},
+];
+const CONTACTS = [
+  {name:"Ayesha Khan",phone:"+1 555-0142",av:"#e91e63"},
+  {name:"David Chen",phone:"+44 7700-900123",av:"#009688"},
+  {name:"Maria Lopez",phone:"+34 612-345-678",av:"#ff5722"},
+  {name:"Omar Farooq",phone:"+92 300-1234567",av:"#3f51b5"},
+  {name:"Emma Wilson",phone:"+61 412-345-678",av:"#673ab7"},
+  {name:"James O'Neil",phone:"+1 555-0199",av:"#2196f3"},
+  {name:"Sara Ahmed",phone:"+20 100-123-4567",av:"#009688"},
+  {name:"Lucas Meyer",phone:"+49 151-23456789",av:"#795548"}
+];
+const FRIENDS = CONTACTS.map(c=>c.name);
+const FRIEND_AV = CONTACTS.map(c=>c.av);
+const REPLIES = ["That's awesome! 😄","Haha, good one!","Let's catch up soon 👍","Did you see the news today?","Sounds great!","On my way 🚗","Send me the details","Wow, really? Tell me more!","😂😂","Sure thing!"];
+const GRADS = ["linear-gradient(135deg,#667eea,#764ba2)","linear-gradient(135deg,#f6d365,#fda085)","linear-gradient(135deg,#84fab0,#8fd3f4)","linear-gradient(135deg,#fa709a,#fee140)","linear-gradient(135deg,#a18cd1,#fbc2eb)","linear-gradient(135deg,#ff9a9e,#fecfef)"];
+const EMOJIS = ["🌅","🏖️","🎉","⚽","🚀","🎵"];
+
+let user = null;
+let posts = [], chats = {}, activeChat = null, activeVid = SAMPLE_VIDS[0], watchCat = "All", pendingMedia = null;
+
+/* ============================================================
+   AUTH
+============================================================ */
+let pendingUser=null;
+function getUsers(){ return JSON.parse(localStorage.getItem("lv_users")||"{}"); }
+function showSignup(){ loginForm.classList.add("hidden"); otpForm.classList.add("hidden"); signupForm.classList.remove("hidden"); suErr.textContent=""; }
+function showLogin(){ signupForm.classList.add("hidden"); otpForm.classList.add("hidden"); loginForm.classList.remove("hidden"); loginErr.textContent=""; }
+function showOTP(){ signupForm.classList.add("hidden"); otpForm.classList.remove("hidden"); otpErr.textContent=""; }
+function doSignup(){
+  const name=suName.value.trim(), email=suEmail.value.trim().toLowerCase(), pass=suPass.value, phone=suPhone.value.trim();
+  if(!name||!email.includes("@")||pass.length<6||phone.length<7){ suErr.textContent="Enter valid name, email, 6+ char password and phone."; return; }
+  const users=getUsers();
+  if(users[email]){ suErr.textContent="Account already exists. Log in instead."; return; }
+  pendingUser={name,email,pass,phone};
+  alert("📱 OTP sent to "+phone+"! (For this demo, the code is 1234)");
+  showOTP();
+}
+function verifyOTP(){
+  if(otpCode.value.trim()!=="1234"){ otpErr.textContent="Wrong OTP. Try 1234."; return; }
+  const users=getUsers(); users[pendingUser.email]={name:pendingUser.name,pass:pendingUser.pass,phone:pendingUser.phone};
+  localStorage.setItem("lv_users",JSON.stringify(users));
+  startSession({name:pendingUser.name,email:pendingUser.email,phone:pendingUser.phone});
+}
+function doLogin(){
+  const email=loginEmail.value.trim().toLowerCase(), pass=loginPass.value;
+  const u=getUsers()[email];
+  if(!u||u.pass!==pass){ loginErr.textContent="Invalid email or password."; return; }
+  startSession({name:u.name,email,phone:u.phone||""});
+}
+function startSession(u){
+  user=u; localStorage.setItem("lv_session",JSON.stringify(u));
+  authScreen.style.display="none"; app.style.display="block";
+  const initials=u.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  navAvatar.textContent=initials; compAvatar.textContent=initials; chatAvatar.textContent=initials; profileAvatar.textContent=initials;
+  sideName.textContent=u.name; profileName.textContent=u.name; profileEmail.textContent=u.email+" · "+(u.phone||"No phone");
+  seedData(); renderAll();
+  switchTab('feed');
+}
+function logout(){ localStorage.removeItem("lv_session"); location.reload(); }
+
+/* ============================================================
+   SEED DATA
+============================================================ */
+function seedData(){
+  posts = JSON.parse(localStorage.getItem("lv_posts")||"null") || [
+    {id:1,author:"Ayesha Khan",av:"#e91e63",time:"2h",text:"Sunset vibes at the beach today 🌅 Nothing beats this view!",media:GRADS[1],mediaType:"img",likes:128,liked:false,comments:[{a:"David Chen",t:"Beautiful! 😍"}]},
+    {id:2,author:"David Chen",av:"#009688",time:"4h",text:"Just finished building my first AI project 🤖 Who else is learning machine learning in 2026?",likes:64,liked:false,comments:[{a:"Maria Lopez",t:"Congrats! 🎉"},{a:"You",t:"So cool!"}]},
+    {id:3,author:"Maria Lopez",av:"#ff5722",time:"7h",text:"Match day! ⚽ Let's gooo!",media:GRADS[3],mediaType:"img",likes:230,liked:false,comments:[]},
+  ];
+  // inject followed page posts once
+  const followed=getFollowed();
+  let maxId=posts.reduce((a,p)=>Math.max(a,p.id),0);
+  PAGES.forEach(page=>{
+    if(!followed.includes(page.name)) return;
+    page.posts.forEach((pp,idx)=>{
+      const exists=posts.some(p=>p.author===page.name && p.text===pp.text);
+      if(!exists){
+        posts.push({id:++maxId,author:page.name,av:page.av,time:(idx+1)+"h",text:pp.text,media:pp.media,mediaType:pp.mediaType||null,likes:pp.likes,liked:false,comments:pp.comments||[],verified:true});
+      }
+    });
+  });
+  chats = JSON.parse(localStorage.getItem("lv_chats")||"null") || {
+    "Ayesha Khan":{av:CONTACTS[0].av,phone:CONTACTS[0].phone,online:true,msgs:[{t:"Hey! Are we still on for dinner?",o:false,time:"10:02 AM"},{t:"Yes! 7pm works for me 🍽️",o:true,time:"10:05 AM"}]},
+    "David Chen":{av:CONTACTS[1].av,phone:CONTACTS[1].phone,online:true,msgs:[{t:"Did you watch the keynote yesterday?",o:false,time:"9:40 AM"},{t:"The AI demos were insane 🤯",o:false,time:"9:41 AM"}]},
+    "Maria Lopez":{av:CONTACTS[2].av,phone:CONTACTS[2].phone,online:false,msgs:[{t:"Happy birthday!! 🎂🎉",o:true,time:"Yesterday"}]},
+    "Omar Farooq":{av:CONTACTS[3].av,phone:CONTACTS[3].phone,online:true,msgs:[{t:"Send me the project files when free",o:false,time:"Yesterday"}]},
+  };
+}
+function persist(){ localStorage.setItem("lv_posts",JSON.stringify(posts)); localStorage.setItem("lv_chats",JSON.stringify(chats)); }
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function switchTab(tab){
+  ["feed","watch","chat","profile"].forEach(t=>{
+    document.getElementById("page-"+t).classList.toggle("hidden",t!==tab);
+    const btn=document.getElementById("tab-"+t);
+    if(btn) btn.classList.toggle("active",t===tab);
+  });
+  if(tab==="watch") renderWatch();
+  if(tab==="chat"){ renderChatList(); renderChatWindow(); chatBadge.classList.add("hidden"); }
+  if(tab==="profile") renderProfile();
+  window.scrollTo(0,0);
+}
+
+/* ============================================================
+   FEED
+============================================================ */
+function renderStories(){
+  let h=`<div class="story" style="background:${GRADS[0]}" onclick="alert('Story camera coming soon! 📸')">
+    <div class="story-grad" style="color:#fff;font-size:14px">Your story</div><span>Create story</span><div class="story-add">+</div></div>`;
+  FRIENDS.slice(0,6).forEach((f,i)=>{
+    h+=`<div class="story" onclick="viewStory('${f}')"><div class="story-grad" style="background:${GRADS[(i+1)%GRADS.length]}">${EMOJIS[i%EMOJIS.length]}</div><span>${f.split(" ")[0]}</span></div>`;
+  });
+  stories.innerHTML=h;
+}
+function viewStory(f){ alert(f+"'s story: living their best life "+EMOJIS[Math.floor(Math.random()*EMOJIS.length)]); }
+function attachPhoto(){
+  const url=prompt("Paste an image URL (or leave blank for a random gradient):");
+  if(url===null) return;
+  pendingMedia={type:"img",src:url||GRADS[Math.floor(Math.random()*GRADS.length)]};
+  alert("Photo attached 📷 — click Post to publish!");
+}
+function attachVideo(){
+  const url=prompt("Paste a video URL (mp4/webm):","https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4");
+  if(!url) return;
+  pendingMedia={type:"video",src:url};
+  alert("Video attached 🎥 — click Post to publish!");
+}
+function publishPost(){
+  const text=postInput.value.trim();
+  if(!text&&!pendingMedia) return;
+  posts.unshift({id:Date.now(),author:user.name,av:"#1877f2",time:"Just now",text,media:pendingMedia?.src,mediaType:pendingMedia?.type,likes:0,liked:false,comments:[]});
+  postInput.value=""; pendingMedia=null; persist(); renderFeed(); renderProfile();
+}
+function likePost(id){
+  const p=posts.find(p=>p.id===id);
+  p.liked=!p.liked; p.likes+=p.liked?1:-1; persist(); renderFeed(); renderProfile();
+}
+function addComment(id,inputEl){
+  const v=inputEl.value.trim(); if(!v) return;
+  posts.find(p=>p.id===id).comments.push({a:user.name,t:v});
+  inputEl.value=""; persist(); renderFeed(); renderProfile();
+}
+function delPost(id){ posts=posts.filter(p=>p.id!==id); persist(); renderFeed(); renderProfile(); }
+function rankScore(p){
+  let h=48;
+  if(p.time==="Just now") h=0;
+  else if(p.time==="Yesterday") h=24;
+  else{ const n=parseInt(p.time); if(!isNaN(n)) h=p.time.includes("d")?n*24:n; }
+  const e=(p.likes||0)*3 + (p.comments?.length||0)*5;
+  return e/Math.pow(h+1,0.8);
+}
+function renderFeed(){
+  const q=(globalSearch.value||"").toLowerCase();
+  let list=posts.filter(p=>!q||p.text.toLowerCase().includes(q)||p.author.toLowerCase().includes(q));
+  list=[...list].sort((a,b)=>rankScore(b)-rankScore(a));
+  feedPosts.innerHTML = list.map(p=>{
+    const why = PAGES.find(pg=>pg.name===p.author)?"Suggested for you · You follow this page":(p.author===user.name?"Your post":"Because you're friends with "+p.author);
+    return `<div class="card post">
+      <div class="post-head">
+        <div class="avatar sm ${p.verified?'page':''}" style="background:${p.av}">${p.author[0]}</div>
+        <div class="info"><b>${p.author}</b>${p.verified?'<span class="vbadge">✔</span>':''}<small>${p.time} · 🌍</small></div>
+        ${p.author===user.name?`<button onclick="delPost(${p.id})" style="margin-left:auto;background:var(--bg);border-radius:8px;padding:4px 10px;color:#e41e3f">Delete</button>`:""}
+      </div>
+      <div class="why">${why}</div>
+      ${p.text?`<div class="post-text">${escapeHtml(p.text)}</div>`:""}
+      ${p.media&&p.mediaType==="img"?`<div class="post-media"><img src="${p.media}" onerror="this.style.display='none'" alt=""></div>`:""}
+      ${p.media&&p.mediaType==="video"?`<div class="post-media"><video src="${p.media}" controls></video></div>`:""}
+      <div class="post-stats"><span>👍 ${p.likes.toLocaleString()}</span><span>💬 ${p.comments.length} comments</span></div>
+      <div class="post-actions">
+        <button class="${p.liked?'liked':''}" onclick="likePost(${p.id})">👍 Like</button>
+        <button onclick="document.getElementById('ci-${p.id}').focus()">💬 Comment</button>
+        <button onclick="navigator.clipboard?.writeText(location.href);alert('Link copied! 🔗')">↗️ Share</button>
+      </div>
+      <div class="comments" id="cm-${p.id}">
+        ${p.comments.map(c=>`<div class="comment"><div class="bubble"><b>${c.a}</b> ${escapeHtml(c.t)}</div></div>`).join("")}
+      </div>
+      <div class="comment-input">
+        <input id="ci-${p.id}" placeholder="Write a comment…" onkeydown="if(event.key==='Enter')addComment(${p.id},this)">
+        <button onclick="addComment(${p.id},document.getElementById('ci-${p.id}'))">Post</button>
+      </div>
+    </div>`;
+  }).join("") || `<div class="card" style="text-align:center;color:var(--muted)">No posts found.</div>`;
+  statPosts.textContent=posts.filter(p=>p.author===user.name).length;
+}
+function renderContacts(){
+  contactsList.innerHTML=CONTACTS.map((c,i)=>`<div class="friend-row" onclick="openChatWith('${c.name}')"><div class="avatar sm" style="background:${c.av}">${c.name[0]}</div><div><div>${c.name}</div><small>${c.phone}</small></div><div class="dot"></div></div>`).join("");
+  // suggested pages below contacts
+  const followed=getFollowed();
+  let h='<div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px"><b>Suggested Pages</b></div>';
+  PAGES.forEach(pg=>{
+    const is=followed.includes(pg.name);
+    h+=`<div class="friend-row" style="margin-top:6px"><div class="avatar sm page" style="background:${pg.av}">${pg.name[0]}</div><div><div>${pg.name}${pg.verified?'<span class="vbadge">✔</span>':''}</div><small style="color:var(--muted)">Public page</small></div><button class="follow-btn ${is?'following':''}" onclick="toggleFollow('${pg.name}')">${is?'Following':'Follow'}</button></div>`;
+  });
+  contactsList.innerHTML+=h;
+}
+function toggleFollow(name){
+  let f=getFollowed();
+  if(f.includes(name)){ f=f.filter(x=>x!==name); }
+  else{ f.push(name); alert("You followed "+name+"! Their posts will now appear in your feed."); }
+  setFollowed(f); seedData(); persist(); renderAll();
+}
+function renderProfile(){
+  profilePosts.innerHTML = "<b style='display:block;margin-bottom:12px'>Your posts</b>" + (posts.filter(p=>p.author===user.name).map(p=>`
+    <div class="card"><div class="post-text">${escapeHtml(p.text)}</div>
+    <div class="post-stats" style="border:none;padding-bottom:0"><span>👍 ${p.likes} · 💬 ${p.comments.length}</span>
+    <button onclick="delPost(${p.id})" style="background:none;color:#e41e3f">Delete</button></div></div>`).join("") || `<div class="card" style="color:var(--muted)">You haven't posted yet. Say something! ✨</div>`);
+  statPosts.textContent=posts.filter(p=>p.author===user.name).length;
+}
+
+/* ============================================================
+   WATCH
+============================================================ */
+function renderWatch(){
+  const cats=["All",...new Set(SAMPLE_VIDS.map(v=>v.cat))];
+  chipRow.innerHTML=cats.map(c=>`<div class="chip ${c===watchCat?'active':''}" onclick="watchCat='${c}';renderWatch()">${c}</div>`).join("");
+  const q=(globalSearch.value||"").toLowerCase();
+  const list=SAMPLE_VIDS.filter(v=>(watchCat==="All"||v.cat===watchCat)&&(!q||v.title.toLowerCase().includes(q)||v.ch.toLowerCase().includes(q)));
+  if(!list.includes(activeVid)) activeVid=list[0]||SAMPLE_VIDS[0];
+  playerCard.innerHTML=`
+    <div class="yt-wrap"><iframe src="https://www.youtube-nocookie.com/embed/${activeVid.vid}?autoplay=1&rel=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border-radius:12px"></iframe></div>
+    <h2 style="margin-top:12px">${activeVid.title}</h2>
+    <div class="post-head" style="margin-top:8px">
+      <div class="avatar sm page" style="background:#ff0000;color:#fff">▶</div>
+      <div class="info"><b>${activeVid.ch}</b><small>${activeVid.views} · ${activeVid.cat}</small></div>
+      <button class="btn-primary" style="width:auto;padding:8px 22px;margin-left:auto" onclick="alert('Subscribed to ${activeVid.ch}! 🔔')">Subscribe</button>
+    </div>
+    <div class="post-stats" style="border-top:1px solid var(--border);margin-top:10px"><span>👍 12K</span><span>👎 214</span><span>💬 1.4K</span><span>↗️ Share</span></div>`;
+  vidGrid.innerHTML=list.map(v=>`
+    <div class="vid-card ${v.id===activeVid.id?'playing':''}" onclick="playVid(${v.id})">
+      <div class="vid-thumb"><img src="${v.thumb}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="grad" style="display:none;background:linear-gradient(135deg,#667eea,#764ba2)">${v.emoji}</div><div class="dur">${v.dur}</div></div>
+      <div class="vid-info"><b>${v.title}</b><small>${v.ch} · ${v.views}</small></div>
+    </div>`).join("");
+}
+function playVid(id){ activeVid=SAMPLE_VIDS.find(v=>v.id===id); renderWatch(); playerCard.scrollIntoView({behavior:"smooth"}); }
+
+/* ============================================================
+   CHAT
+============================================================ */
+function openChatWith(name){
+  const ci=CONTACTS.find(c=>c.name===name);
+  if(!chats[name]) chats[name]={av:ci?ci.av:"#607d8b",phone:ci?ci.phone:"",online:true,msgs:[]};
+  activeChat=name; switchTab("chat");
+}
+function renderChatList(){
+  const q=(chatSearch.value||"").toLowerCase();
+  const entries=Object.entries(chats).filter(([n])=>n.toLowerCase().includes(q));
+  chatItems.innerHTML=entries.map(([n,c])=>{
+    const last=c.msgs[c.msgs.length-1];
+    return `<div class="chat-item ${n===activeChat?'active':''}" onclick="activeChat='${n}';renderChatList();renderChatWindow()">
+      <div class="avatar sm" style="background:${c.av}">${n[0]}</div>
+      <div class="cinfo"><b>${n}</b><p>${last?(last.o?"You: ":"")+escapeHtml(last.t):"Say hi 👋"}</p></div>
+      ${last?`<time>${last.time}</time>`:""}</div>`;
+  }).join("") || `<div style="padding:20px;color:var(--muted)">No chats found.</div>`;
+}
+function renderChatWindow(){
+  if(!activeChat){ chatWinHead.innerHTML="<span style='color:var(--muted)'>Select a chat to start messaging</span>"; chatMessages.innerHTML=""; return; }
+  const c=chats[activeChat];
+  chatWinHead.innerHTML=`<div class="avatar sm" style="background:${c.av}">${activeChat[0]}</div><div><div>${activeChat}</div><small style="color:var(--green);font-weight:600">${c.online?"online":"last seen recently"} · ${c.phone||""}</small></div>`;
+  chatMessages.innerHTML=c.msgs.map(m=>`<div class="msg ${m.o?'out':'in'}">${escapeHtml(m.t)}<time>${m.time} ${m.o?"✓✓":""}</time></div>`).join("");
+  chatMessages.scrollTop=chatMessages.scrollHeight;
+}
+function sendChat(){
+  const t=chatInput.value.trim(); if(!t||!activeChat) return;
+  const now=new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+  chats[activeChat].msgs.push({t,o:true,time:now});
+  chatInput.value=""; persist(); renderChatList(); renderChatWindow();
+  setTimeout(()=>{ // simulate reply
+    const reply=REPLIES[Math.floor(Math.random()*REPLIES.length)];
+    const tm=new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+    chats[activeChat].msgs.push({t:reply,o:false,time:tm});
+    persist(); renderChatList();
+    if(!document.getElementById("page-chat").classList.contains("hidden")) renderChatWindow();
+    else { chatBadge.classList.remove("hidden"); }
+  },1200+Math.random()*1800);
+}
+
+/* ============================================================
+   AI ASSISTANT — built-in "Nova" brain
+============================================================ */
+function toggleAI(){ aiPanel.classList.toggle("hidden"); if(!aiPanel.classList.contains("hidden")&&!aiBody.children.length) greetAI(); }
+function openAI(){ aiPanel.classList.remove("hidden"); if(!aiBody.children.length) greetAI(); }
+function greetAI(){ aiSay(`Hi ${user.name.split(" ")[0]}! 👋 I'm Nova, your built-in AI assistant. I can chat, tell jokes, do math, set reminders (in-chat), and answer questions about this app. Try: "what can you do", "tell me a joke", "12 * 8", or "post hello world".`); }
+function aiSay(t){ const d=document.createElement("div"); d.className="ai-msg bot"; d.textContent=t; aiBody.appendChild(d); aiBody.scrollTop=aiBody.scrollHeight; }
+function sendAI(){
+  const t=aiInput.value.trim(); if(!t) return;
+  const d=document.createElement("div"); d.className="ai-msg user"; d.textContent=t; aiBody.appendChild(d);
+  aiInput.value=""; aiBody.scrollTop=aiBody.scrollHeight;
+  const ty=document.createElement("div"); ty.className="typing"; ty.textContent="Nova is typing…";
+  aiBody.appendChild(ty); aiBody.scrollTop=aiBody.scrollHeight;
+  setTimeout(()=>{ ty.remove(); aiSay(novaBrain(t)); },700+Math.random()*900);
+}
+function novaBrain(input){
+  const t=input.toLowerCase();
+  // math
+  const math=input.replace(/×/g,"*").replace(/÷/g,"/").replace(/[^0-9+\-*/().%\s]/g,"").trim();
+  if(/^[0-9+\-*/().%\s]+$/.test(math)&&/\d/.test(math)&&/[+\-*/]/.test(math)){
+    try{ const r=Function('"use strict";return('+math+")")(); if(isFinite(r)) return `🧮 ${math} = ${+r.toFixed(6)}`; }catch(e){}
+  }
+  // jokes
+  if(/joke|funny|laugh/.test(t)){
+    const j=["Why do programmers prefer dark mode? Because light attracts bugs. 🐛","I told my computer I needed a break… now it won't stop sending me KitKat ads. 🍫","Why did the developer go broke? He used up all his cache. 💸","There are 10 types of people: those who understand binary and those who don't. 😄"];
+    return j[Math.floor(Math.random()*j.length)];
+  }
+  if(/what can you do|help|commands/.test(t))
+    return "Here's what I can do:\n• Math — try \"45 * 12\"\n• Jokes — \"tell me a joke\"\n• App help — \"how do I post\" / \"how do I chat\"\n• Time & date — \"what time is it\"\n• Motivation — \"motivate me\"\n• Post for you — \"post <your text>\"\n• Open sections — \"open watch\" / \"open messages\"";
+  if(/how do i post|create.*post/.test(t)) return "To post: go to 🏠 Home, type in the \"What's on your mind?\" box at the top, then hit 📤 Post. You can even attach photos and videos!";
+  if(/how do i (chat|message)/.test(t)) return "Go to 💬 Messages (top bar), pick a contact on the left, and start typing. Your friends reply instantly!";
+  if(/how do i watch|video/.test(t)) return "Click 🎬 Watch in the top bar. Tap any video card to play it — full YouTube-style player with subscribe button!";
+  if(/time|date|day/.test(t)) return "🕐 It's "+new Date().toLocaleString()+" right now.";
+  if(/motivat|inspir/.test(t)) return "🌟 \"The best time to plant a tree was 20 years ago. The second best time is now.\" — You've got this, "+user.name.split(" ")[0]+"!";
+  if(/^post\s+/.test(t)){ const txt=input.slice(5).trim(); if(txt){ posts.unshift({id:Date.now(),author:user.name,av:"#1877f2",time:"Just now",text:txt,likes:0,liked:false,comments:[]}); persist(); renderFeed(); renderProfile(); return "✅ Posted to your feed! Check the Home tab."; } }
+  if(/open (watch|video)/.test(t)){ switchTab("watch"); return "🎬 Opening Watch for you!"; }
+  if(/open (message|chat)/.test(t)){ switchTab("chat"); return "💬 Opening Messages!"; }
+  if(/open (home|feed)/.test(t)){ switchTab("feed"); return "🏠 Back home!"; }
+  if(/open profile/.test(t)){ switchTab("profile"); return "👤 Here's your profile!"; }
+  if(/who are you|your name/.test(t)) return "I'm Nova 🤖 — the AI living inside LinkVerse. Always awake, never on vacation.";
+  if(/hello|hi|hey/.test(t)) return "Hey "+user.name.split(" ")[0]+"! 👋 What can I do for you?";
+  if(/thank/.test(t)) return "Anytime! 😊";
+  if(/weather/.test(t)) return "I wish I could peek outside! 🌤️ For live weather, connect me to a weather API — the hook is ready in the code.";
+  if(/love|awesome|cool|great/.test(t)) return "Aww, thanks! You're pretty great yourself. ✨";
+  return "Interesting! I'm still learning about \""+input+"\". Try asking what I can do, or give me some math, or ask for a joke! 😊";
+}
+
+/* ============================================================
+   UTILS & INIT
+============================================================ */
+function escapeHtml(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function renderAll(){ renderStories(); renderFeed(); renderContacts(); if(!document.getElementById("page-watch").classList.contains("hidden")) renderWatch(); if(!document.getElementById("page-chat").classList.contains("hidden")){renderChatList();renderChatWindow();} }
+
+// auto-login
+const session=JSON.parse(localStorage.getItem("lv_session")||"null");
+if(session) startSession(session);
+</script>
+</body>
+</html>
